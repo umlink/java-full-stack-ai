@@ -1,0 +1,8 @@
+spring:
+  flyway:
+    migrate-on-start: false
+
+logging:
+  level:
+    com.example.mall: INFO
+    root: WARN

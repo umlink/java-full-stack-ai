@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.mall.module.product.mapper.ProductMapper">
+
+    <!-- 基础查询条件片段 -->
+    <sql id="whereCondition">
+        <where>
+            <if test="req.categoryId != null">
+                AND p.category_id = #{req.categoryId}
+            </if>
+            <if test="req.brandId != null">
+                AND p.brand_id = #{req.brandId}
+            </if>
+            <if test="req.status != null">
+                AND p.status = #{req.status}
+            </if>
+            <if test="req.minPrice != null">
+                AND p.price &gt;= #{req.minPrice}
+            </if>
+            <if test="req.maxPrice != null">
+                AND p.price &lt;= #{req.maxPrice}
+            </if>
+            <if test="req.keyword != null and req.keyword != ''">
+                AND MATCH(p.name, p.keywords) AGAINST(#{req.keyword} IN BOOLEAN MODE)
+            </if>
+        </where>
+    </sql>
+
+    <!-- 带条件的分页查询 -->
+    <select id="selectPageWithCondition" resultType="com.example.mall.module.product.entity.Product">
+        SELECT p.*
+        FROM product p
+        <include refid="whereCondition"/>
+        <!-- 排序字段白名单映射，禁止直接使用前端参数拼接 ORDER BY -->
+        <choose>
+            <when test="req.sort == 'price_asc'">
+                ORDER BY p.price ASC, p.sort_order ASC, p.id DESC
+            </when>
+            <when test="req.sort == 'price_desc'">
+                ORDER BY p.price DESC, p.sort_order ASC, p.id DESC
+            </when>
+            <when test="req.sort == 'sales_desc'">
+                ORDER BY p.sales DESC, p.sort_order ASC, p.id DESC
+            </when>
+            <when test="req.sort == 'new_desc'">
+                ORDER BY p.created_at DESC, p.id DESC
+            </when>
+            <otherwise>
+                ORDER BY p.sort_order ASC, p.created_at DESC, p.id DESC
+            </otherwise>
+        </choose>
+    </select>
+
+</mapper>

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.mall.module.cart.mapper.CartMapper">
+
+    <!-- 购物车列表展示结果映射 -->
+    <resultMap id="CartVOMap" type="com.example.mall.module.cart.dto.CartVO">
+        <id column="id" property="id"/>
+        <result column="product_id" property="productId"/>
+        <result column="product_name" property="productName"/>
+        <result column="product_image" property="productImage"/>
+        <result column="sku_id" property="skuId"/>
+        <result column="sku_name" property="skuName"/>
+        <result column="price" property="price"/>
+        <result column="quantity" property="quantity"/>
+        <result column="stock" property="stock"/>
+        <result column="selected" property="selected"/>
+        <result column="is_offline" property="isOffline"/>
+    </resultMap>
+
+    <!-- 查询用户购物车列表（关联商品和 SKU 信息） -->
+    <select id="selectCartWithProduct" resultMap="CartVOMap">
+        SELECT ci.id,
+               ci.product_id,
+               ci.sku_id,
+               ci.quantity,
+               ci.selected,
+               p.name                   AS product_name,
+               p.main_image             AS product_image,
+               p.status                 AS product_status,
+               p.total_stock,
+               ps.name                  AS sku_name,
+               ps.stock                 AS sku_stock,
+               ps.price                 AS sku_price,
+               COALESCE(ps.price, p.price)     AS price,
+               COALESCE(ps.stock, p.total_stock) AS stock,
+               CASE WHEN p.status != 1 THEN TRUE ELSE FALSE END AS is_offline
+        FROM cart_item ci
+                 LEFT JOIN product p ON ci.product_id = p.id
+                 LEFT JOIN product_sku ps ON ci.sku_id = ps.id
+        WHERE ci.user_id = #{userId}
+        ORDER BY ci.created_at DESC
+    </select>
+
+    <!-- 统计相同(user_id, product_id, sku_id)的记录 -->
+    <select id="countByUserAndProduct" resultType="int">
+        SELECT COUNT(1)
+        FROM cart_item
+        WHERE user_id = #{userId}
+          AND product_id = #{productId}
+          AND ((sku_id IS NULL AND #{skuId} IS NULL) OR sku_id = #{skuId})
+    </select>
+
+    <!-- 查询已存在的购物车项 -->
+    <select id="selectByUserAndProduct" resultType="com.example.mall.module.cart.entity.CartItem">
+        SELECT *
+        FROM cart_item
+        WHERE user_id = #{userId}
+          AND product_id = #{productId}
+          AND ((sku_id IS NULL AND #{skuId} IS NULL) OR sku_id = #{skuId})
+        LIMIT 1
+    </select>
+
+</mapper>

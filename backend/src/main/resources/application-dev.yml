@@ -1,0 +1,9 @@
+spring:
+  flyway:
+    migrate-on-start: true
+    clean-on-validation-error: true
+
+logging:
+  level:
+    com.example.mall: DEBUG
+    root: INFO

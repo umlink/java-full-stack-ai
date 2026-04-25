@@ -1,0 +1,90 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mall-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: mall
+    volumes:
+      - mysql-data:/var/lib/mysql
+    mem_limit: 1g
+    cpus: "1.0"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: mall-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    mem_limit: 512m
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+
+  rocketmq-namesrv:
+    image: apache/rocketmq:5.1.4
+    container_name: mall-rmq-namesrv
+    ports:
+      - "9876:9876"
+    environment:
+      JAVA_OPT_EXT: -Xms256m -Xmx256m
+    command: sh mqnamesrv
+    restart: unless-stopped
+
+  rocketmq-broker:
+    image: apache/rocketmq:5.1.4
+    container_name: mall-rmq-broker
+    ports:
+      - "10911:10911"
+      - "10909:10909"
+    environment:
+      JAVA_OPT_EXT: -Xms512m -Xmx512m
+      NAMESRV_ADDR: rocketmq-namesrv:9876
+    command: sh mqbroker
+    depends_on:
+      - rocketmq-namesrv
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      MYSQL_HOST: mysql
+      REDIS_HOST: redis
+      ROCKETMQ_NAMESRV: rocketmq-namesrv:9876
+      JWT_SECRET: ${JWT_SECRET}
+      QINIU_ACCESS_KEY: ${QINIU_ACCESS_KEY}
+      QINIU_SECRET_KEY: ${QINIU_SECRET_KEY}
+    mem_limit: 512m
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      rocketmq-namesrv:
+        condition: service_started
+    stop_grace_period: 35s
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    mem_limit: 128m
+    restart: unless-stopped
+
+volumes:
+  mysql-data:
+  redis-data:

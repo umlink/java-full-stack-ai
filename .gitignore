@@ -1,0 +1,40 @@
+
+# IDE &amp; Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Backend (Java/Maven)
+backend/target/
+backend/.mvn/
+backend/mvnw
+backend/mvnw.cmd
+backend/logs/
+*.jar
+*.war
+*.ear
+
+# Frontend (Node.js/Vite)
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+*.tsbuildinfo
+
+# Logs
+logs/
+*.log
+
+# Testing &amp; Coverage
+*.lcov
+.nyc_output/
+coverage/
+
+# Environment - NOT ignored as requested
+# .env
+# .env.*
+
+# Claude worktrees
+.claude/
